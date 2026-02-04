@@ -1,0 +1,143 @@
+{
+  "ui": {
+    "width": 420,
+    "height": 140,
+    "padding": 20,
+    "corner_radius": 14,
+    "opacity": 0.85,
+    "auto_start": true
+  },
+  "schedule": {
+    "active_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "refresh_time": "00:00"
+  },
+  "rules": {
+    "headline_no_repeat_window": 8,
+    "punchline_no_repeat_days": 75
+  },
+  "tone": {
+    "headline_style": "alliterative_weekday",
+    "punchline_style": "corporate_satire"
+  },
+  "content": {
+    "prefixes": {
+      "M_prefixes": [
+        "Magnificent",
+        "Marvellous",
+        "Miraculous",
+        "Momentous",
+        "Monumental",
+        "Majestic",
+        "Meteoric",
+        "Mind-Blowing",
+        "Mission-Critical",
+        "Maximum",
+        "Magnetic",
+        "Masterful"
+      ],
+      "T_prefixes_tue": [
+        "Transformational",
+        "Triumphant",
+        "Top-Tier",
+        "Tremendous",
+        "Turbocharged",
+        "Tactical",
+        "Tenacious",
+        "Thrilling",
+        "Trailblazing",
+        "Transcendent",
+        "Titanic",
+        "Trend-Setting"
+      ],
+      "W_prefixes": [
+        "World-Class",
+        "Winning",
+        "Well-Aligned",
+        "Wondrous",
+        "Watershed",
+        "Wholesome",
+        "Wildly-Successful",
+        "Wise",
+        "Worthwhile",
+        "Wizard-Level",
+        "Wow-Worthy",
+        "Warp-Speed"
+      ],
+      "T_prefixes_thu": [
+        "Thriving",
+        "Tremendous",
+        "Turbocharged",
+        "Thankful",
+        "Thought-Leading",
+        "Thorough",
+        "Thunderous",
+        "Titan-Level",
+        "Top-Notch",
+        "Timely",
+        "Transformative",
+        "Trenchant"
+      ],
+      "F_prefixes": [
+        "Fantastic",
+        "Flawless",
+        "Phenomenal",
+        "Fabulous",
+        "Fierce",
+        "Flourishing",
+        "Forward-Thinking",
+        "Frictionless",
+        "Fun-Sized",
+        "Fulfilling",
+        "Fire-Emoji",
+        "Full-Stack"
+      ]
+    },
+    "punchlines": [
+      "Shipping confidence. Testing later.",
+      "Another day of disrupting ourselves.",
+      "We don't have bugs, just undocumented features.",
+      "Synergy levels critical. Send help.",
+      "Crushing it. The spirit, mostly.",
+      "Moving fast and deprecating things.",
+      "Your calendar has 7 conflicts. Good luck.",
+      "Alignment achieved. Objectives still unclear.",
+      "Celebrating wins we'll redefine later.",
+      "Progress update: we are updating progress.",
+      "Pivoting to our previous pivot.",
+      "Bandwidth at capacity. Enthusiasm optional.",
+      "Another all-hands that could've been an email.",
+      "Leveraging synergies to optimize leveraging.",
+      "Q4 goals: survive Q4.",
+      "Your standup has exceeded 15 minutes. Again.",
+      "ROI of this meeting: still calculating.",
+      "Agile until it's inconvenient.",
+      "Technical debt? We call it legacy.",
+      "Circling back to circle back later.",
+      "Disruption achieved. Revenue pending.",
+      "KPIs are up. Morale is a KPI now.",
+      "Sprint ended. Marathon continues.",
+      "Culture fit detected. Proceed with caution.",
+      "Your OKRs have OKRs now.",
+      "Innovation unlocked. Budget locked.",
+      "Scaling our ability to discuss scaling.",
+      "Strategy: have more strategies.",
+      "Touch base? We barely survived hello.",
+      "Quarterly review: we reviewed quarters.",
+      "Low-hanging fruit picked. Tree is bare.",
+      "Best practices: practicing being best.",
+      "Action items: create more action items.",
+      "Roadmap updated. Destination unknown.",
+      "Resources reallocated. Hope you weren't one.",
+      "Velocity improved. Direction TBD.",
+      "Retrospective: we had retrospectives.",
+      "Stakeholders aligned. Chairs not included.",
+      "Deep dive into shallow waters.",
+      "Cross-functional dysfunction achieved.",
+      "Lean methodology. Heavy meetings.",
+      "Customer obsessed. Sleep deprived.",
+      "Data-driven. Spreadsheet haunted.",
+      "Failing forward. Also backward. Just failing.",
+      "Blue sky thinking. Gray cubicle sitting."
+    ]
+  }
+}

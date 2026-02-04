@@ -1,0 +1,4 @@
+GetDpiForWindow
+GetMonitorInfo
+MonitorFromWindow
+SystemParametersInfo
