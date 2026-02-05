@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Tracker Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 1fr auto;
+    height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    grid-row: 1 / 3;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .sidebar h2 {
+    font-size: 14px;
+    color: #f0f6fc;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .sidebar h3 {
+    font-size: 12px;
+    color: #8b949e;
+    margin: 16px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  /* Preset buttons */
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .preset-btn {
+    padding: 5px 10px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #21262d;
+    color: #c9d1d9;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .preset-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .preset-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+  /* Checkboxes */
+  .checkbox-group { display: flex; flex-direction: column; gap: 6px; }
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .checkbox-item input { accent-color: #58a6ff; cursor: pointer; }
+  .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Comments */
+  .comments-section { margin-top: 16px; }
+  .comment-count {
+    font-size: 11px;
+    color: #8b949e;
+    background: #30363d;
+    padding: 2px 6px;
+    border-radius: 8px;
+    margin-left: 6px;
+  }
+  .comment-item {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .comment-item .target {
+    color: #58a6ff;
+    font-weight: 600;
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  .comment-item .file {
+    color: #8b949e;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  .comment-item .text { color: #c9d1d9; line-height: 1.4; }
+  .comment-item .delete-btn {
+    float: right;
+    background: none;
+    border: none;
+    color: #f85149;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    opacity: 0.6;
+  }
+  .comment-item .delete-btn:hover { opacity: 1; }
+  .no-comments { color: #484f58; font-size: 12px; font-style: italic; }
+
+  /* Canvas area */
+  .canvas-area {
+    position: relative;
+    overflow: hidden;
+    background: #0d1117;
+  }
+  .canvas-area svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Zoom controls */
+  .zoom-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+  }
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #161b22;
+    color: #c9d1d9;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .zoom-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: #161b22ee;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    z-index: 10;
+  }
+  .legend h4 {
+    font-size: 10px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #8b949e;
+    margin-bottom: 3px;
+  }
+  .legend-line {
+    width: 24px;
+    height: 2px;
+  }
+
+  /* Prompt output */
+  .prompt-area {
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    padding: 12px 16px;
+    position: relative;
+  }
+  .prompt-area h4 {
+    font-size: 10px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+  .prompt-text {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #c9d1d9;
+    line-height: 1.5;
+    max-height: 100px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    padding: 4px 12px;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #21262d;
+    color: #c9d1d9;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .copy-btn.copied { background: #238636; border-color: #238636; color: #fff; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 20px;
+    width: 400px;
+    max-width: 90%;
+  }
+  .modal h3 {
+    color: #f0f6fc;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .modal .modal-file {
+    color: #8b949e;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+  .modal textarea {
+    width: 100%;
+    height: 80px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #c9d1d9;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px;
+    resize: vertical;
+  }
+  .modal textarea:focus { outline: none; border-color: #58a6ff; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .modal-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #30363d;
+  }
+  .modal-btn.cancel { background: #21262d; color: #c9d1d9; }
+  .modal-btn.save { background: #238636; border-color: #238636; color: #fff; }
+  .modal-btn:hover { opacity: 0.9; }
+
+  /* Title badge */
+  .title-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #30363d;
+  }
+  .title-area h1 {
+    font-size: 16px;
+    color: #f0f6fc;
+    font-weight: 700;
+  }
+  .title-area .badge {
+    font-size: 10px;
+    background: #1f6feb;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="title-area">
+      <h1>Gym Tracker</h1>
+      <span class="badge">Architecture</span>
+    </div>
+
+    <h3>View Presets</h3>
+    <div class="presets" id="presets"></div>
+
+    <h3>Layers</h3>
+    <div class="checkbox-group" id="layers"></div>
+
+    <h3>Connections</h3>
+    <div class="checkbox-group" id="connections"></div>
+
+    <div class="comments-section">
+      <h3>Comments <span class="comment-count" id="commentCount">0</span></h3>
+      <div id="commentsList"><span class="no-comments">Click a component to add feedback</span></div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomIn()">+</button>
+      <button class="zoom-btn" onclick="zoomOut()">&minus;</button>
+      <button class="zoom-btn" onclick="zoomReset()" style="font-size:11px">1:1</button>
+    </div>
+    <svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- Prompt output -->
+  <div class="prompt-area">
+    <h4>Generated Prompt</h4>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    <div class="prompt-text" id="promptText">Explore the architecture and click components to add feedback.</div>
+  </div>
+</div>
+
+<!-- Comment modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <div class="modal-file" id="modalFile"></div>
+    <textarea id="modalText" placeholder="Add your feedback about this component..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn save" onclick="saveComment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Architecture Data ──────────────────────────────────────────
+
+const LAYERS = {
+  'ios':       { label: 'iOS / Geofency',        color: '#fef3c7', border: '#f59e0b' },
+  'cloudflare':{ label: 'Cloudflare Workers',     color: '#fed7aa', border: '#f97316' },
+  'database':  { label: 'D1 SQLite Database',     color: '#fce7f3', border: '#ec4899' },
+  'widget':    { label: 'WinUI 3 Widget',         color: '#dbeafe', border: '#3b82f6' },
+  'cron':      { label: 'Scheduled Worker (Cron)',color: '#dcfce7', border: '#22c55e' },
+};
+
+const CONNECTION_TYPES = {
+  'http':      { label: 'HTTP Request',     color: '#3b82f6', dash: '' },
+  'data-flow': { label: 'Data Flow',        color: '#f97316', dash: '6,3' },
+  'query':     { label: 'DB Query',         color: '#ec4899', dash: '4,4' },
+  'cron':      { label: 'Cron Trigger',     color: '#22c55e', dash: '8,4' },
+  'internal':  { label: 'Internal Call',    color: '#8b949e', dash: '3,3' },
+};
+
+const nodes = [
+  // iOS layer (y ~40)
+  { id: 'geofency', label: 'Geofency iOS', subtitle: 'Geofencing App',
+    x: 420, y: 30, w: 160, h: 50, layer: 'ios',
+    desc: 'iOS app that detects gym enter/exit via geofencing and sends HTTP webhooks' },
+
+  // Cloudflare Workers layer (y ~140-250)
+  { id: 'router', label: 'Route Dispatcher', subtitle: 'src/index.ts',
+    x: 350, y: 140, w: 150, h: 45, layer: 'cloudflare',
+    desc: 'Main entry point - routes requests to /ingest/geofency, /gym/summary, /health' },
+
+  { id: 'auth', label: 'Auth Service', subtitle: 'src/services/auth.ts',
+    x: 130, y: 140, w: 140, h: 45, layer: 'cloudflare',
+    desc: 'Token validation via X-Auth-Token header or HTTP Basic Auth (password field)' },
+
+  { id: 'ingest', label: 'Ingest Endpoint', subtitle: 'src/routes/ingest.ts',
+    x: 180, y: 225, w: 155, h: 45, layer: 'cloudflare',
+    desc: 'POST /ingest/geofency - Parses Geofency JSON/form payloads, deduplicates via SHA-256 hash' },
+
+  { id: 'summary', label: 'Summary Endpoint', subtitle: 'src/routes/summary.ts',
+    x: 520, y: 225, w: 160, h: 45, layer: 'cloudflare',
+    desc: 'GET /gym/summary - Returns progress metrics, heatmap grid, streaks. Accepts start, weeks, mode, target params' },
+
+  { id: 'sessionizer', label: 'Sessionizer', subtitle: 'src/services/sessionizer.ts',
+    x: 130, y: 310, w: 150, h: 45, layer: 'cloudflare',
+    desc: 'Pairs enter/exit events into visits. 20-min minimum, 3-hr dedup window, 240-min auto-close' },
+
+  { id: 'rollup', label: 'Rollup Service', subtitle: 'src/services/rollup.ts',
+    x: 520, y: 310, w: 150, h: 45, layer: 'cloudflare',
+    desc: 'Daily aggregation - computes visit/miss/future/excluded status per day for heatmap' },
+
+  // Cron layer (y ~400)
+  { id: 'cron-job', label: 'Daily Cron (5AM UTC)', subtitle: 'src/scheduled/daily-rollup.ts',
+    x: 330, y: 400, w: 180, h: 45, layer: 'cron',
+    desc: 'Scheduled worker runs daily at 5 AM UTC. Auto-closes stale visits, recomputes 7 days of rollups' },
+
+  // Database layer (y ~490)
+  { id: 'events-table', label: 'events', subtitle: 'D1: id, event_hash, timestamp, action',
+    x: 100, y: 490, w: 160, h: 45, layer: 'database',
+    desc: 'Raw enter/exit events from Geofency. Deduplicated via SHA-256 event_hash (timestamp+action+location)' },
+
+  { id: 'visits-table', label: 'visits', subtitle: 'D1: enter/exit times, duration, qualified',
+    x: 330, y: 490, w: 190, h: 45, layer: 'database',
+    desc: 'Paired visit sessions. Tracks enter_time, exit_time, duration_minutes, is_qualified (>=20min), auto_closed' },
+
+  { id: 'rollups-table', label: 'daily_rollups', subtitle: 'D1: roll_date, status, qualified_visits',
+    x: 580, y: 490, w: 180, h: 45, layer: 'database',
+    desc: 'Pre-computed daily summaries. Status: visit, miss, future, or excluded (weekends). Used by heatmap' },
+
+  // Widget layer (y ~610-720)
+  { id: 'gym-service', label: 'GymService', subtitle: 'Services/GymService.cs',
+    x: 490, y: 600, w: 155, h: 45, layer: 'widget',
+    desc: 'HTTP client with 30s timeout. 15-min cache, 24-hr stale fallback. Exponential backoff on failures' },
+
+  { id: 'gym-viewmodel', label: 'GymViewModel', subtitle: 'ViewModels/GymViewModel.cs',
+    x: 310, y: 680, w: 165, h: 45, layer: 'widget',
+    desc: 'Observable properties: titleText, progressPercent, progressBarColor, heatmapRows, monthLabels. Colors: orange <50%, green >=50%' },
+
+  { id: 'gym-tile', label: 'GymTileContent', subtitle: 'Views/GymTileContent.xaml',
+    x: 100, y: 680, w: 155, h: 45, layer: 'widget',
+    desc: 'UserControl: "Consistency Index" title, progress bar with inline %, month labels, 5-row heatmap (Mon-Fri, 6x6px cells)' },
+
+  { id: 'widget-content', label: 'WidgetContent', subtitle: 'Views/WidgetContent.xaml',
+    x: 100, y: 600, w: 155, h: 45, layer: 'widget',
+    desc: 'Main view: alliterative tile + orange divider + gym tile. Single outer Border (CornerRadius=8, #1A1A1A)' },
+
+  { id: 'app-xaml', label: 'App.xaml.cs', subtitle: 'App entry point',
+    x: 310, y: 600, w: 140, h: 45, layer: 'widget',
+    desc: 'Wires GymService + GymViewModel. Window: 460x305px, rootGrid #1A1A1A background, DWM-aligned corners' },
+
+  { id: 'gym-config', label: 'GymConfig', subtitle: 'Models/WidgetConfig.cs',
+    x: 690, y: 680, w: 140, h: 45, layer: 'widget',
+    desc: 'Config: enabled, api_base_url, read_token, target_days (50), heatmap_start_date, heatmap_weeks (48)' },
+];
+
+const connections = [
+  // Geofency -> Worker
+  { from: 'geofency', to: 'router', type: 'http', label: 'POST webhook' },
+
+  // Router -> Auth
+  { from: 'router', to: 'auth', type: 'internal', label: 'validate token' },
+
+  // Router -> Endpoints
+  { from: 'router', to: 'ingest', type: 'internal', label: 'POST /ingest' },
+  { from: 'router', to: 'summary', type: 'internal', label: 'GET /summary' },
+
+  // Ingest -> Sessionizer
+  { from: 'ingest', to: 'sessionizer', type: 'data-flow', label: 'trigger pairing' },
+
+  // Summary -> Rollup
+  { from: 'summary', to: 'rollup', type: 'data-flow', label: 'compute rollups' },
+
+  // Sessionizer -> DB
+  { from: 'sessionizer', to: 'events-table', type: 'query', label: 'read events' },
+  { from: 'sessionizer', to: 'visits-table', type: 'query', label: 'write visits' },
+  { from: 'ingest', to: 'events-table', type: 'query', label: 'insert event' },
+
+  // Rollup -> DB
+  { from: 'rollup', to: 'visits-table', type: 'query', label: 'read visits' },
+  { from: 'rollup', to: 'rollups-table', type: 'query', label: 'upsert rollups' },
+
+  // Summary -> DB
+  { from: 'summary', to: 'rollups-table', type: 'query', label: 'read heatmap' },
+
+  // Cron
+  { from: 'cron-job', to: 'sessionizer', type: 'cron', label: 'auto-close stale' },
+  { from: 'cron-job', to: 'rollup', type: 'cron', label: 'recompute 7 days' },
+
+  // Widget -> API
+  { from: 'gym-service', to: 'router', type: 'http', label: 'GET /gym/summary' },
+
+  // Widget internal
+  { from: 'app-xaml', to: 'gym-service', type: 'internal', label: 'creates' },
+  { from: 'app-xaml', to: 'gym-viewmodel', type: 'internal', label: 'creates' },
+  { from: 'app-xaml', to: 'widget-content', type: 'internal', label: 'sets content' },
+  { from: 'gym-service', to: 'gym-viewmodel', type: 'data-flow', label: 'GymSummary DTO' },
+  { from: 'gym-viewmodel', to: 'gym-tile', type: 'data-flow', label: 'data binding' },
+  { from: 'widget-content', to: 'gym-tile', type: 'internal', label: 'contains' },
+  { from: 'gym-config', to: 'gym-service', type: 'internal', label: 'config' },
+  { from: 'gym-config', to: 'gym-viewmodel', type: 'internal', label: 'targets' },
+];
+
+const PRESETS = {
+  'Full System': { layers: Object.keys(LAYERS), connections: Object.keys(CONNECTION_TYPES) },
+  'Ingest Flow': {
+    layers: ['ios', 'cloudflare', 'database'],
+    connections: ['http', 'data-flow', 'query', 'internal'],
+    highlight: ['geofency', 'router', 'auth', 'ingest', 'sessionizer', 'events-table', 'visits-table']
+  },
+  'Widget Flow': {
+    layers: ['cloudflare', 'database', 'widget'],
+    connections: ['http', 'data-flow', 'query', 'internal'],
+    highlight: ['summary', 'rollup', 'rollups-table', 'visits-table', 'gym-service', 'gym-viewmodel', 'gym-tile', 'widget-content', 'app-xaml', 'gym-config', 'router']
+  },
+  'Cron Jobs': {
+    layers: ['cloudflare', 'database', 'cron'],
+    connections: ['cron', 'query', 'data-flow', 'internal'],
+    highlight: ['cron-job', 'sessionizer', 'rollup', 'visits-table', 'rollups-table', 'events-table']
+  },
+};
+
+// ── State ──────────────────────────────────────────────────────
+
+const state = {
+  activePreset: 'Full System',
+  layers: {},
+  connectionTypes: {},
+  comments: [],
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  highlightNodes: null, // null = show all
+  modalNode: null,
+};
+
+// Initialize state
+Object.keys(LAYERS).forEach(k => state.layers[k] = true);
+Object.keys(CONNECTION_TYPES).forEach(k => state.connectionTypes[k] = true);
+
+// ── Rendering ──────────────────────────────────────────────────
+
+function renderControls() {
+  // Presets
+  const presetsEl = document.getElementById('presets');
+  presetsEl.innerHTML = '';
+  Object.keys(PRESETS).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (state.activePreset === name ? ' active' : '');
+    btn.textContent = name;
+    btn.onclick = () => applyPreset(name);
+    presetsEl.appendChild(btn);
+  });
+
+  // Layers
+  const layersEl = document.getElementById('layers');
+  layersEl.innerHTML = '';
+  Object.entries(LAYERS).forEach(([id, layer]) => {
+    const label = document.createElement('label');
+    label.className = 'checkbox-item';
+    label.innerHTML = `
+      <input type="checkbox" ${state.layers[id] ? 'checked' : ''}>
+      <span class="color-dot" style="background:${layer.border}"></span>
+      ${layer.label}
+    `;
+    label.querySelector('input').onchange = (e) => {
+      state.layers[id] = e.target.checked;
+      state.activePreset = null;
+      updateAll();
+    };
+    layersEl.appendChild(label);
+  });
+
+  // Connection types
+  const connsEl = document.getElementById('connections');
+  connsEl.innerHTML = '';
+  Object.entries(CONNECTION_TYPES).forEach(([id, ct]) => {
+    const label = document.createElement('label');
+    label.className = 'checkbox-item';
+    label.innerHTML = `
+      <input type="checkbox" ${state.connectionTypes[id] ? 'checked' : ''}>
+      <span class="color-dot" style="background:${ct.color}"></span>
+      ${ct.label}
+    `;
+    label.querySelector('input').onchange = (e) => {
+      state.connectionTypes[id] = e.target.checked;
+      state.activePreset = null;
+      updateAll();
+    };
+    connsEl.appendChild(label);
+  });
+}
+
+function renderDiagram() {
+  const svg = document.getElementById('diagram');
+  const vbW = 900, vbH = 780;
+  svg.setAttribute('viewBox', `0 0 ${vbW} ${vbH}`);
+
+  let html = '';
+
+  // Defs: arrowheads
+  html += '<defs>';
+  Object.entries(CONNECTION_TYPES).forEach(([id, ct]) => {
+    html += `<marker id="arrow-${id}" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="${ct.color}"/>
+    </marker>`;
+  });
+  html += '</defs>';
+
+  // Transform group for zoom/pan
+  html += `<g transform="translate(${state.panX},${state.panY}) scale(${state.zoom})">`;
+
+  // Layer bands (background)
+  const layerBands = [
+    { layer: 'ios', y: 15, h: 70, label: 'iOS' },
+    { layer: 'cloudflare', y: 120, h: 255, label: 'Cloudflare Workers' },
+    { layer: 'cron', y: 382, h: 75, label: 'Cron' },
+    { layer: 'database', y: 472, h: 80, label: 'D1 Database' },
+    { layer: 'widget', y: 575, h: 170, label: 'WinUI 3 Widget' },
+  ];
+
+  layerBands.forEach(band => {
+    if (!state.layers[band.layer]) return;
+    const layer = LAYERS[band.layer];
+    html += `<rect x="20" y="${band.y}" width="860" height="${band.h}" rx="8"
+      fill="${layer.border}08" stroke="${layer.border}30" stroke-width="1" stroke-dasharray="4,4"/>`;
+    html += `<text x="35" y="${band.y + 16}" fill="${layer.border}90" font-size="10" font-weight="600"
+      font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">${band.label}</text>`;
+  });
+
+  // Visible nodes
+  const visibleNodes = nodes.filter(n => state.layers[n.layer]);
+  const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+
+  // Draw connections
+  connections.forEach(c => {
+    if (!state.connectionTypes[c.type]) return;
+    if (!visibleNodeIds.has(c.from) || !visibleNodeIds.has(c.to)) return;
+
+    // Check highlight filter
+    if (state.highlightNodes) {
+      if (!state.highlightNodes.has(c.from) && !state.highlightNodes.has(c.to)) return;
+    }
+
+    const fromNode = nodes.find(n => n.id === c.from);
+    const toNode = nodes.find(n => n.id === c.to);
+    const ct = CONNECTION_TYPES[c.type];
+
+    const fx = fromNode.x + fromNode.w / 2;
+    const fy = fromNode.y + fromNode.h / 2;
+    const tx = toNode.x + toNode.w / 2;
+    const ty = toNode.y + toNode.h / 2;
+
+    // Calculate connection points on node edges
+    const { sx, sy, ex, ey } = getEdgePoints(fromNode, toNode);
+
+    // Bezier curve
+    const midY = (sy + ey) / 2;
+    const dx = Math.abs(sx - ex);
+    const dy = Math.abs(sy - ey);
+    let cpOffset = Math.min(dy * 0.4, 60);
+    if (dy < 20) cpOffset = Math.min(dx * 0.3, 40);
+
+    const cp1x = sx, cp1y = sy + (ey > sy ? cpOffset : -cpOffset);
+    const cp2x = ex, cp2y = ey + (ey > sy ? -cpOffset : cpOffset);
+
+    const opacity = state.highlightNodes ? (
+      (state.highlightNodes.has(c.from) && state.highlightNodes.has(c.to)) ? 0.9 : 0.15
+    ) : 0.6;
+
+    html += `<path d="M${sx},${sy} C${cp1x},${cp1y} ${cp2x},${cp2y} ${ex},${ey}"
+      fill="none" stroke="${ct.color}" stroke-width="1.5" opacity="${opacity}"
+      ${ct.dash ? `stroke-dasharray="${ct.dash}"` : ''}
+      marker-end="url(#arrow-${c.type})"/>`;
+
+    // Connection label
+    if (c.label && opacity > 0.3) {
+      const lx = (sx + ex) / 2;
+      const ly = (sy + ey) / 2;
+      html += `<text x="${lx}" y="${ly - 5}" fill="${ct.color}" font-size="9" text-anchor="middle"
+        font-family="'Cascadia Code','Fira Code',monospace" opacity="0.8">${c.label}</text>`;
+    }
+  });
+
+  // Draw nodes
+  visibleNodes.forEach(n => {
+    const layer = LAYERS[n.layer];
+    const hasComment = state.comments.some(c => c.target === n.id);
+    const isHighlighted = !state.highlightNodes || state.highlightNodes.has(n.id);
+    const opacity = isHighlighted ? 1 : 0.2;
+
+    html += `<g class="node" data-id="${n.id}" style="cursor:pointer;opacity:${opacity}"
+      onclick="openModal('${n.id}')">`;
+
+    // Shadow
+    html += `<rect x="${n.x + 2}" y="${n.y + 2}" width="${n.w}" height="${n.h}" rx="6"
+      fill="#000" opacity="0.3"/>`;
+
+    // Main rect
+    html += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6"
+      fill="#161b22" stroke="${hasComment ? '#58a6ff' : layer.border}" stroke-width="${hasComment ? 2 : 1.5}"/>`;
+
+    // Color bar on left
+    html += `<rect x="${n.x}" y="${n.y}" width="4" height="${n.h}" rx="2" fill="${layer.border}"/>`;
+
+    // Label
+    html += `<text x="${n.x + 12}" y="${n.y + 19}" fill="#f0f6fc" font-size="12" font-weight="600"
+      font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">${n.label}</text>`;
+
+    // Subtitle
+    html += `<text x="${n.x + 12}" y="${n.y + 33}" fill="#8b949e" font-size="9"
+      font-family="'Cascadia Code','Fira Code',monospace">${n.subtitle}</text>`;
+
+    // Comment indicator
+    if (hasComment) {
+      html += `<circle cx="${n.x + n.w - 8}" cy="${n.y + 8}" r="5" fill="#58a6ff"/>`;
+      html += `<text x="${n.x + n.w - 8}" y="${n.y + 11}" fill="#fff" font-size="7"
+        text-anchor="middle" font-weight="bold">${state.comments.filter(c=>c.target===n.id).length}</text>`;
+    }
+
+    html += '</g>';
+  });
+
+  html += '</g>';
+  svg.innerHTML = html;
+}
+
+function getEdgePoints(fromNode, toNode) {
+  const fcx = fromNode.x + fromNode.w / 2;
+  const fcy = fromNode.y + fromNode.h / 2;
+  const tcx = toNode.x + toNode.w / 2;
+  const tcy = toNode.y + toNode.h / 2;
+
+  let sx, sy, ex, ey;
+
+  // Determine exit side of from node
+  const dx = tcx - fcx;
+  const dy = tcy - fcy;
+
+  if (Math.abs(dy) > Math.abs(dx) * 0.5) {
+    // Mostly vertical
+    if (dy > 0) {
+      sy = fromNode.y + fromNode.h;
+      ey = toNode.y;
+    } else {
+      sy = fromNode.y;
+      ey = toNode.y + toNode.h;
+    }
+    sx = fcx + Math.min(Math.max(dx * 0.1, -fromNode.w/3), fromNode.w/3);
+    ex = tcx - Math.min(Math.max(dx * 0.1, -toNode.w/3), toNode.w/3);
+  } else {
+    // Mostly horizontal
+    if (dx > 0) {
+      sx = fromNode.x + fromNode.w;
+      ex = toNode.x;
+    } else {
+      sx = fromNode.x;
+      ex = toNode.x + toNode.w;
+    }
+    sy = fcy;
+    ey = tcy;
+  }
+
+  return { sx, sy, ex, ey };
+}
+
+function renderLegend() {
+  const legend = document.getElementById('legend');
+  let html = '<h4>Connection Types</h4>';
+  Object.entries(CONNECTION_TYPES).forEach(([id, ct]) => {
+    if (!state.connectionTypes[id]) return;
+    const dashStyle = ct.dash
+      ? `background: repeating-linear-gradient(90deg, ${ct.color} 0, ${ct.color} 4px, transparent 4px, transparent 7px)`
+      : `background: ${ct.color}`;
+    html += `<div class="legend-item">
+      <span class="legend-line" style="${dashStyle}; height:2px; border-radius:1px"></span>
+      ${ct.label}
+    </div>`;
+  });
+  legend.innerHTML = html;
+}
+
+function renderComments() {
+  const list = document.getElementById('commentsList');
+  const count = document.getElementById('commentCount');
+  count.textContent = state.comments.length;
+
+  if (state.comments.length === 0) {
+    list.innerHTML = '<span class="no-comments">Click a component to add feedback</span>';
+    return;
+  }
+
+  list.innerHTML = state.comments.map((c, i) => `
+    <div class="comment-item">
+      <button class="delete-btn" onclick="deleteComment(${i})">&times;</button>
+      <div class="target">${c.targetLabel}</div>
+      <div class="file">${c.targetFile}</div>
+      <div class="text">${escapeHtml(c.text)}</div>
+    </div>
+  `).join('');
+}
+
+function updatePrompt() {
+  const promptEl = document.getElementById('promptText');
+  if (state.comments.length === 0) {
+    promptEl.textContent = 'Explore the architecture and click components to add feedback.';
+    return;
+  }
+
+  const visibleLayerNames = Object.entries(state.layers)
+    .filter(([k, v]) => v)
+    .map(([k]) => LAYERS[k].label);
+
+  let parts = [];
+  if (state.activePreset && state.activePreset !== 'Full System') {
+    parts.push(`Focusing on the ${state.activePreset} view of the Gym Tracker architecture.`);
+  } else if (visibleLayerNames.length < Object.keys(LAYERS).length) {
+    parts.push(`Showing layers: ${visibleLayerNames.join(', ')}.`);
+  } else {
+    parts.push('This is the full Gym Tracker architecture (Geofency iOS -> Cloudflare Workers + D1 -> WinUI 3 Widget).');
+  }
+
+  parts.push('');
+  parts.push('Feedback on specific components:');
+
+  state.comments.forEach(c => {
+    parts.push('');
+    parts.push(`**${c.targetLabel}** (${c.targetFile}):`);
+    parts.push(c.text);
+  });
+
+  promptEl.textContent = parts.join('\n');
+}
+
+function updateAll() {
+  renderControls();
+  renderDiagram();
+  renderLegend();
+  renderComments();
+  updatePrompt();
+}
+
+// ── Presets ─────────────────────────────────────────────────────
+
+function applyPreset(name) {
+  const preset = PRESETS[name];
+  state.activePreset = name;
+
+  Object.keys(LAYERS).forEach(k => state.layers[k] = preset.layers.includes(k));
+  Object.keys(CONNECTION_TYPES).forEach(k => state.connectionTypes[k] = preset.connections.includes(k));
+
+  if (preset.highlight) {
+    state.highlightNodes = new Set(preset.highlight);
+  } else {
+    state.highlightNodes = null;
+  }
+
+  updateAll();
+}
+
+// ── Zoom ────────────────────────────────────────────────────────
+
+function zoomIn()    { state.zoom = Math.min(state.zoom * 1.2, 3); renderDiagram(); }
+function zoomOut()   { state.zoom = Math.max(state.zoom / 1.2, 0.5); renderDiagram(); }
+function zoomReset() { state.zoom = 1; state.panX = 0; state.panY = 0; renderDiagram(); }
+
+// ── Comments ────────────────────────────────────────────────────
+
+function openModal(nodeId) {
+  const node = nodes.find(n => n.id === nodeId);
+  if (!node) return;
+
+  state.modalNode = node;
+  document.getElementById('modalTitle').textContent = node.label;
+  document.getElementById('modalFile').textContent = node.subtitle + (node.desc ? ' — ' + node.desc : '');
+  document.getElementById('modalText').value = '';
+  document.getElementById('modal').classList.add('active');
+  setTimeout(() => document.getElementById('modalText').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  state.modalNode = null;
+}
+
+function saveComment() {
+  const text = document.getElementById('modalText').value.trim();
+  if (!text || !state.modalNode) return;
+
+  state.comments.push({
+    id: Date.now(),
+    target: state.modalNode.id,
+    targetLabel: state.modalNode.label,
+    targetFile: state.modalNode.subtitle,
+    text: text
+  });
+
+  closeModal();
+  updateAll();
+}
+
+function deleteComment(index) {
+  state.comments.splice(index, 1);
+  updateAll();
+}
+
+// ── Copy ────────────────────────────────────────────────────────
+
+function copyPrompt() {
+  const text = document.getElementById('promptText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+// ── Keyboard ────────────────────────────────────────────────────
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ── Utility ─────────────────────────────────────────────────────
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ────────────────────────────────────────────────────────
+updateAll();
+</script>
+</body>
+</html>

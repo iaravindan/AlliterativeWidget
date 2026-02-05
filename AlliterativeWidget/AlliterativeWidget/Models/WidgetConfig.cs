@@ -18,6 +18,9 @@ public class WidgetConfig
 
     [JsonPropertyName("content")]
     public ContentConfig Content { get; set; } = new();
+
+    [JsonPropertyName("gym")]
+    public GymConfig Gym { get; set; } = new();
 }
 
 public class UiConfig
@@ -113,4 +116,31 @@ public class PrefixesConfig
         DayOfWeek.Friday => "Friday",
         _ => ""
     };
+}
+
+public class GymConfig
+{
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; } = false;
+
+    [JsonPropertyName("api_base_url")]
+    public string ApiBaseUrl { get; set; } = "";
+
+    [JsonPropertyName("read_token")]
+    public string ReadToken { get; set; } = "";
+
+    [JsonPropertyName("target_period")]
+    public string TargetPeriod { get; set; } = "weekly";
+
+    [JsonPropertyName("target_visits")]
+    public int TargetVisits { get; set; } = 4;
+
+    [JsonPropertyName("target_days")]
+    public int TargetDays { get; set; } = 50;
+
+    [JsonPropertyName("heatmap_weeks")]
+    public int HeatmapWeeks { get; set; } = 12;
+
+    [JsonPropertyName("heatmap_start_date")]
+    public string HeatmapStartDate { get; set; } = "";
 }

@@ -5,33 +5,51 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="using:AlliterativeWidget.Views"
     mc:Ignorable="d">
 
     <Border
+        x:Name="OuterBorder"
         Background="#1A1A1A"
-        BorderBrush="#40E07C4B"
-        BorderThickness="1"
-        CornerRadius="14"
+        BorderThickness="0"
+        CornerRadius="8"
         Padding="20,16">
-        <StackPanel VerticalAlignment="Center" Spacing="8">
-            <TextBlock
-                x:Name="HeadlineText"
-                FontFamily="Cascadia Mono, Consolas, Courier New"
-                FontSize="22"
-                FontWeight="Bold"
-                Foreground="#E07C4B"
-                Text=""
-                TextTrimming="CharacterEllipsis"
-                TextWrapping="NoWrap" />
-            <TextBlock
-                x:Name="PunchlineText"
-                FontFamily="Cascadia Mono, Consolas, Courier New"
-                FontSize="14"
-                Foreground="#A0A0A0"
-                MaxLines="2"
-                Text=""
-                TextTrimming="CharacterEllipsis"
-                TextWrapping="Wrap" />
+
+        <StackPanel>
+            <!-- Alliterative tile region -->
+            <StackPanel x:Name="AlliterativeTile" Spacing="8">
+                <TextBlock
+                    x:Name="HeadlineText"
+                    FontFamily="Cascadia Mono, Consolas, Courier New"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="#E07C4B"
+                    Text=""
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap" />
+                <TextBlock
+                    x:Name="PunchlineText"
+                    FontFamily="Cascadia Mono, Consolas, Courier New"
+                    FontSize="14"
+                    Foreground="#A0A0A0"
+                    MaxLines="2"
+                    Text=""
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Divider between tiles -->
+            <Border
+                x:Name="Divider"
+                Height="1"
+                Background="#30E07C4B"
+                Margin="0,14,0,12"
+                Visibility="Collapsed" />
+
+            <!-- Gym tile (conditionally visible) -->
+            <views:GymTileContent
+                x:Name="GymTile"
+                Visibility="Collapsed" />
         </StackPanel>
     </Border>
 </UserControl>

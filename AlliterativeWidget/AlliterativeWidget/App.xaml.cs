@@ -17,23 +17,26 @@ public partial class App : Application
 {
     private Window? _window;
     private WidgetViewModel? _viewModel;
+    private GymViewModel? _gymViewModel;
+    private GymService? _gymService;
     private WidgetContent? _content;
     private TaskbarIcon? _trayIcon;
     private bool _isWidgetVisible = true;
+    private WidgetConfig? _config;
 
     public App()
     {
         InitializeComponent();
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         // Initialize services
         var persistenceService = new PersistenceService();
-        var config = persistenceService.LoadConfig();
+        _config = persistenceService.LoadConfig();
 
         // Register for auto-start if configured
-        if (config.Ui.AutoStart && !StartupManager.IsRegistered())
+        if (_config.Ui.AutoStart && !StartupManager.IsRegistered())
         {
             StartupManager.RegisterStartup();
         }
@@ -41,17 +44,39 @@ public partial class App : Application
         // Create services
         var contentEngine = new ContentEngine(persistenceService);
 
+        // Create gym service if enabled
+        if (_config.Gym.Enabled)
+        {
+            _gymService = new GymService(_config.Gym);
+            _gymViewModel = new GymViewModel(_gymService, _config.Gym);
+        }
+
         // Create window
         _window = new Window();
+        _window.SystemBackdrop = null;
 
-        // Create and set content
+        // Create and set content wrapped in a background grid to eliminate white edges
         _content = new WidgetContent();
         _content.WidgetLeftClicked += OnWidgetLeftClicked;
         _content.WidgetRightClicked += OnWidgetRightClicked;
-        _window.Content = _content;
+        _content.GymRefreshRequested += OnGymRefreshRequested;
+
+        var rootGrid = new Grid
+        {
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Microsoft.UI.ColorHelper.FromArgb(255, 26, 26, 26)) // #1A1A1A
+        };
+        rootGrid.Children.Add(_content);
+        _window.Content = rootGrid;
+
+        // Set gym view model if enabled
+        if (_gymViewModel != null)
+        {
+            _content.SetGymViewModel(_gymViewModel);
+        }
 
         // Configure window after it's created
-        ConfigureWindow(config);
+        ConfigureWindow(_config);
 
         // Setup system tray icon
         SetupTrayIcon();
@@ -68,6 +93,12 @@ public partial class App : Application
         {
             _window.Activate();
             _viewModel.Initialize();
+
+            // Initialize gym data
+            if (_gymViewModel != null)
+            {
+                await _gymViewModel.InitializeAsync();
+            }
         }
         else
         {
@@ -156,10 +187,21 @@ public partial class App : Application
         _viewModel?.RefreshContent();
     }
 
+    private async void OnGymRefreshRequested(object? sender, EventArgs e)
+    {
+        // Force refresh gym data when left-clicked on gym tile
+        if (_gymViewModel != null)
+        {
+            await _gymViewModel.ForceRefreshAsync();
+        }
+    }
+
     private void ExitApplication()
     {
         _trayIcon?.Dispose();
         _viewModel?.Cleanup();
+        _content?.Cleanup();
+        _gymService?.Dispose();
         _window?.Close();
         Environment.Exit(0);
     }
@@ -182,15 +224,21 @@ public partial class App : Application
             presenter.SetBorderAndTitleBar(false, false);
         }
 
+        // Calculate height based on gym enabled state
+        // Base height: 140px for alliterative tile only
+        // With gym: alliterative ~80px + divider 26px + title 22px + progress 22px
+        //   + month labels 18px + heatmap (5 rows * 8px) 40px + spacing ~20px + padding 32px
+        var height = config.Gym.Enabled ? 305 : config.Ui.Height;
+
         // Set window size
-        appWindow.Resize(new Windows.Graphics.SizeInt32(config.Ui.Width, config.Ui.Height));
+        appWindow.Resize(new Windows.Graphics.SizeInt32(config.Ui.Width, height));
 
         // Position window in top-right corner
         var positionService = new WindowPositionService();
         var (x, y) = positionService.CalculateTopRightPosition(
             hwnd,
             config.Ui.Width,
-            config.Ui.Height,
+            height,
             config.Ui.Padding);
         appWindow.Move(new Windows.Graphics.PointInt32(x, y));
     }

@@ -1,0 +1,17 @@
+name = "gym-tracker-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-15"
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "gym-tracker-db"
+database_id = "7a9b5492-6b7e-4136-ab66-a3bcb4568f9b"
+migrations_dir = "schema/migrations"
+
+# Scheduled worker for daily rollups
+[triggers]
+crons = ["0 5 * * *"]  # Run at 5:00 AM UTC daily
