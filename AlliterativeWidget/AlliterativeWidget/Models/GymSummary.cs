@@ -16,6 +16,9 @@ public class GymSummaryResponse
     [JsonPropertyName("stats")]
     public StatsData Stats { get; set; } = new();
 
+    [JsonPropertyName("cycling")]
+    public CyclingData? Cycling { get; set; }
+
     [JsonPropertyName("generatedAt")]
     public string GeneratedAt { get; set; } = "";
 }
@@ -93,4 +96,22 @@ public class StatsData
 
     [JsonPropertyName("longestStreak")]
     public int LongestStreak { get; set; }
+}
+
+public class CyclingData
+{
+    [JsonPropertyName("weeks")]
+    public List<CyclingWeekData> Weeks { get; set; } = [];
+}
+
+public class CyclingWeekData
+{
+    [JsonPropertyName("weekStart")]
+    public string WeekStart { get; set; } = "";
+
+    [JsonPropertyName("hasRide")]
+    public bool HasRide { get; set; }
+
+    [JsonPropertyName("totalRides")]
+    public int TotalRides { get; set; }
 }

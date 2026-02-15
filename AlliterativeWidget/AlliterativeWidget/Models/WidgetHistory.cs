@@ -31,6 +31,12 @@ public class HeadlineHistory
     [JsonPropertyName("friday")]
     public Queue<string> Friday { get; set; } = new();
 
+    [JsonPropertyName("saturday")]
+    public Queue<string> Saturday { get; set; } = new();
+
+    [JsonPropertyName("sunday")]
+    public Queue<string> Sunday { get; set; } = new();
+
     public Queue<string> GetQueueForDay(DayOfWeek day) => day switch
     {
         DayOfWeek.Monday => Monday,
@@ -38,6 +44,8 @@ public class HeadlineHistory
         DayOfWeek.Wednesday => Wednesday,
         DayOfWeek.Thursday => Thursday,
         DayOfWeek.Friday => Friday,
+        DayOfWeek.Saturday => Saturday,
+        DayOfWeek.Sunday => Sunday,
         _ => new Queue<string>()
     };
 

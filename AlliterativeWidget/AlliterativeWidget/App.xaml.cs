@@ -9,12 +9,16 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.Runtime.InteropServices;
 using WinRT.Interop;
 
 namespace AlliterativeWidget;
 
 public partial class App : Application
 {
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
+
     private Window? _window;
     private WidgetViewModel? _viewModel;
     private GymViewModel? _gymViewModel;
@@ -78,6 +82,9 @@ public partial class App : Application
         // Configure window after it's created
         ConfigureWindow(_config);
 
+        // Set window icon
+        SetWindowIcon();
+
         // Setup system tray icon
         SetupTrayIcon();
 
@@ -88,36 +95,44 @@ public partial class App : Application
         _viewModel = new WidgetViewModel(contentEngine, schedulerService);
         _viewModel.ContentRefreshed += OnContentRefreshed;
 
-        // Check if today is a workday
-        if (DateTimeHelper.IsWorkday())
-        {
-            _window.Activate();
-            _viewModel.Initialize();
+        // Activate window and initialize for all days (including weekends)
+        _window.Activate();
+        _viewModel.Initialize();
 
-            // Initialize gym data
-            if (_gymViewModel != null)
-            {
-                await _gymViewModel.InitializeAsync();
-            }
-        }
-        else
+        // Initialize gym data
+        if (_gymViewModel != null)
         {
-            // Weekend - hide window but keep app running for scheduler
-            _viewModel.Initialize();
-            _isWidgetVisible = false;
-            HideWindow();
+            await _gymViewModel.InitializeAsync();
         }
 
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
+    private void SetWindowIcon()
+    {
+        if (_window == null) return;
+        var hwnd = WindowNative.GetWindowHandle(_window);
+        var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
+        var appWindow = AppWindow.GetFromWindowId(windowId);
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
+        if (File.Exists(iconPath))
+        {
+            appWindow.SetIcon(iconPath);
+        }
+    }
+
     private void SetupTrayIcon()
     {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         _trayIcon = new TaskbarIcon
         {
             ToolTipText = "Alliterative Widget",
             ContextMenuMode = ContextMenuMode.PopupMenu
         };
+        if (File.Exists(iconPath))
+        {
+            _trayIcon.Icon = new System.Drawing.Icon(iconPath);
+        }
 
         // Create context menu
         var contextMenu = new MenuFlyout();
@@ -226,12 +241,17 @@ public partial class App : Application
 
         // Calculate height based on gym enabled state
         // Base height: 140px for alliterative tile only
-        // With gym: alliterative ~80px + divider 26px + title 22px + progress 22px
-        //   + month labels 18px + heatmap (5 rows * 8px) 40px + spacing ~20px + padding 32px
-        var height = config.Gym.Enabled ? 305 : config.Ui.Height;
+        // With gym: compact layout ~292px (280 base + 12 for cycling row + gap)
+        var height = config.Gym.Enabled ? 292 : config.Ui.Height;
+
+        // Scale to physical pixels — AppWindow.Resize expects device pixels, not DIPs
+        var dpi = GetDpiForWindow(hwnd);
+        var scale = dpi / 96.0;
 
         // Set window size
-        appWindow.Resize(new Windows.Graphics.SizeInt32(config.Ui.Width, height));
+        appWindow.Resize(new Windows.Graphics.SizeInt32(
+            (int)(config.Ui.Width * scale),
+            (int)(height * scale)));
 
         // Position window in top-right corner
         var positionService = new WindowPositionService();

@@ -64,54 +64,11 @@
                     Text="0%" />
             </Grid>
 
-            <!-- Month labels row -->
-            <ItemsControl x:Name="MonthLabelsControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock
-                            FontFamily="Cascadia Mono, Consolas, Courier New"
-                            FontSize="9"
-                            Foreground="#606060"
-                            Text="{Binding Month}"
-                            Width="{Binding Width}"
-                            TextAlignment="Left" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!-- Month labels row (built in code-behind) -->
+            <StackPanel x:Name="MonthLabelsPanel" Orientation="Horizontal" />
 
-            <!-- Heatmap grid (5 rows for Mon-Fri) -->
-            <ItemsControl x:Name="HeatmapControl">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Vertical" Spacing="2" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ItemsControl ItemsSource="{Binding Days}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="2" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        Width="6"
-                                        Height="6"
-                                        CornerRadius="1"
-                                        Background="{Binding Color}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!-- Heatmap grid (built in code-behind) -->
+            <StackPanel x:Name="HeatmapPanel" Orientation="Vertical" Spacing="2" />
 
             <!-- Error message -->
             <TextBlock

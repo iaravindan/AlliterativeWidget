@@ -1,6 +1,6 @@
 {
   "ui": {
-    "width": 420,
+    "width": 460,
     "height": 140,
     "padding": 20,
     "corner_radius": 14,
@@ -90,6 +90,34 @@
         "Fulfilling",
         "Fire-Emoji",
         "Full-Stack"
+      ],
+      "S_prefixes_sat": [
+        "Serene",
+        "Slack-Free",
+        "Synergy-Free",
+        "Sweet",
+        "Spectacular",
+        "Splendid",
+        "Stress-Free",
+        "Self-Care",
+        "Sublime",
+        "Snooze-Approved",
+        "Spreadsheet-Free",
+        "Standup-Free"
+      ],
+      "S_prefixes_sun": [
+        "Serene",
+        "Slack-Free",
+        "Synergy-Free",
+        "Sweet",
+        "Soothing",
+        "Splendid",
+        "Stress-Free",
+        "Self-Care",
+        "Sublime",
+        "Snooze-Approved",
+        "Spreadsheet-Free",
+        "Slow-Paced"
       ]
     },
     "punchlines": [
@@ -138,16 +166,32 @@
       "Data-driven. Spreadsheet haunted.",
       "Failing forward. Also backward. Just failing.",
       "Blue sky thinking. Gray cubicle sitting."
+    ],
+    "weekend_punchlines": [
+      "No synergy required today.",
+      "Your calendar is blissfully empty.",
+      "Zero meetings. Maximum vibes.",
+      "Inbox can wait. Coffee cannot.",
+      "Off the clock. Off the grid.",
+      "Alignment optional. Pajamas mandatory.",
+      "Today's KPI: rest.",
+      "Stakeholders? Never heard of them.",
+      "The only standup is for brunch.",
+      "Productivity measured in naps.",
+      "OOO energy activated.",
+      "Strategic do-nothing in progress.",
+      "Bandwidth: reserved for snacks.",
+      "Touch base with the couch instead."
     ]
   },
   "gym": {
-    "enabled": false,
-    "api_base_url": "",
-    "read_token": "",
+    "enabled": true,
+    "api_base_url": "https://gym-tracker-api.aravindan-ingersol.workers.dev",
+    "read_token": "5ylfJiDVWgVb4qcTPUlE3BkduXUczCqdvcb_T87eM6s",
     "target_period": "weekly",
     "target_visits": 4,
     "target_days": 50,
     "heatmap_weeks": 48,
-    "heatmap_start_date": ""
+    "heatmap_start_date": "2026-02-02"
   }
 }

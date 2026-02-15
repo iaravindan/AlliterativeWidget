@@ -17,6 +17,9 @@ public partial class GymViewModel : ObservableObject
     private static readonly Color MissedColor = Color.FromArgb(255, 244, 67, 54);    // #F44336 Material Red
     private static readonly Color FutureColor = Color.FromArgb(255, 60, 60, 60);     // #3C3C3C Dark gray
     private static readonly Color ExcludedColor = Color.FromArgb(255, 40, 40, 40);   // #282828 Darker gray
+    private static readonly Color RestDayColor = Color.FromArgb(255, 100, 149, 237); // #6495ED Cornflower Blue - subtle rest day
+    private static readonly Color CyclingColor = Color.FromArgb(255, 0, 188, 212);   // #00BCD4 Material Cyan/Teal
+    private static readonly Color NoCyclingColor = Color.FromArgb(255, 60, 60, 60);  // #3C3C3C same as FutureColor
 
     private static readonly Color OnTrackColor = Color.FromArgb(255, 76, 175, 80);   // #4CAF50 Green
     private static readonly Color WarningColor = Color.FromArgb(255, 224, 124, 75);  // #E07C4B Theme orange
@@ -45,6 +48,9 @@ public partial class GymViewModel : ObservableObject
 
     [ObservableProperty]
     private List<MonthLabelViewModel> _monthLabels = [];
+
+    [ObservableProperty]
+    private List<HeatmapCellViewModel>? _cyclingRow;
 
     public event EventHandler? DataRefreshed;
 
@@ -179,6 +185,31 @@ public partial class GymViewModel : ObservableObject
         }
         HeatmapRows = rows;
 
+        // Build cycling row (6th row)
+        if (summary.Cycling?.Weeks != null && summary.Cycling.Weeks.Count > 0)
+        {
+            var cyclingWeeks = summary.Cycling.Weeks;
+            if (!string.IsNullOrEmpty(startFilter))
+            {
+                cyclingWeeks = cyclingWeeks
+                    .Where(w => string.Compare(w.WeekStart, startFilter, StringComparison.Ordinal) >= 0)
+                    .ToList();
+            }
+
+            var cyclingCells = cyclingWeeks.Select(w => new HeatmapCellViewModel
+            {
+                Date = w.WeekStart,
+                Status = w.HasRide ? "cycling" : "no-cycling",
+                Color = new SolidColorBrush(w.HasRide ? CyclingColor : NoCyclingColor)
+            }).ToList();
+
+            CyclingRow = cyclingCells;
+        }
+        else
+        {
+            CyclingRow = null;
+        }
+
         // Build month labels from filtered grid
         var monthLabels = new List<MonthLabelViewModel>();
         string currentMonth = "";
@@ -234,6 +265,7 @@ public partial class GymViewModel : ObservableObject
     {
         "visit" => VisitedColor,
         "miss" => MissedColor,
+        "rest" => RestDayColor,
         "future" => FutureColor,
         "excluded" => ExcludedColor,
         _ => FutureColor

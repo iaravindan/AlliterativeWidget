@@ -37,6 +37,8 @@ public class PersistenceService : IPersistenceService
 
     public WidgetConfig LoadConfig()
     {
+        var defaultConfig = LoadDefaultConfig();
+
         try
         {
             if (File.Exists(_configPath))
@@ -45,6 +47,8 @@ public class PersistenceService : IPersistenceService
                 var config = JsonSerializer.Deserialize<WidgetConfig>(json, JsonOptions);
                 if (config != null && IsValidConfig(config))
                 {
+                    // Merge missing fields from defaults
+                    MergeWithDefaults(config, defaultConfig);
                     return config;
                 }
             }
@@ -54,7 +58,20 @@ public class PersistenceService : IPersistenceService
             // Fall through to default config
         }
 
-        return LoadDefaultConfig();
+        return defaultConfig;
+    }
+
+    private static void MergeWithDefaults(WidgetConfig config, WidgetConfig defaults)
+    {
+        // Merge weekend prefixes if missing
+        if (config.Content.Prefixes.Saturday.Count == 0)
+            config.Content.Prefixes.Saturday = defaults.Content.Prefixes.Saturday;
+        if (config.Content.Prefixes.Sunday.Count == 0)
+            config.Content.Prefixes.Sunday = defaults.Content.Prefixes.Sunday;
+
+        // Merge weekend punchlines if missing
+        if (config.Content.WeekendPunchlines.Count == 0)
+            config.Content.WeekendPunchlines = defaults.Content.WeekendPunchlines;
     }
 
     private static bool IsValidConfig(WidgetConfig config)

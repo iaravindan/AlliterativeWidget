@@ -1,6 +1,6 @@
 import type { Env } from '../index';
 
-type DayStatus = 'visit' | 'miss' | 'future' | 'excluded';
+type DayStatus = 'visit' | 'miss' | 'future' | 'excluded' | 'rest';
 
 interface VisitRow {
   is_qualified: number;
@@ -14,6 +14,7 @@ interface RollupRow {
   status: string;
   qualified_visits: number;
   total_minutes: number;
+  is_manual: number;
 }
 
 interface DateRow {
@@ -80,16 +81,27 @@ async function computeDayStatus(
 
 /**
  * Computes and stores rollup for a single date
+ * Respects manual entries - won't overwrite if is_manual = 1
  */
 export async function computeRollupForDate(env: Env, date: string, today: string): Promise<void> {
+  // Check if this is a manual entry that shouldn't be overwritten
+  const existing = await env.DB.prepare(`
+    SELECT is_manual FROM daily_rollups WHERE roll_date = ?
+  `).bind(date).first() as { is_manual: number } | null;
+
+  if (existing?.is_manual === 1) {
+    // Don't overwrite manual entries
+    return;
+  }
+
   const dayOfWeek = getDayOfWeek(date);
   const workday = isWorkday(dayOfWeek);
   const { status, qualifiedVisits, totalMinutes } = await computeDayStatus(env, date, today);
 
   // Upsert the rollup
   await env.DB.prepare(`
-    INSERT INTO daily_rollups (roll_date, day_of_week, is_workday, status, qualified_visits, total_minutes)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO daily_rollups (roll_date, day_of_week, is_workday, status, qualified_visits, total_minutes, is_manual)
+    VALUES (?, ?, ?, ?, ?, ?, 0)
     ON CONFLICT(roll_date) DO UPDATE SET
       status = excluded.status,
       qualified_visits = excluded.qualified_visits,
@@ -137,9 +149,10 @@ export async function getRollupsForRange(
   status: DayStatus;
   qualifiedVisits: number;
   totalMinutes: number;
+  isManual: boolean;
 }>> {
   const results = await env.DB.prepare(`
-    SELECT roll_date, day_of_week, is_workday, status, qualified_visits, total_minutes
+    SELECT roll_date, day_of_week, is_workday, status, qualified_visits, total_minutes, COALESCE(is_manual, 0) as is_manual
     FROM daily_rollups
     WHERE roll_date >= ? AND roll_date <= ?
     ORDER BY roll_date ASC
@@ -152,7 +165,29 @@ export async function getRollupsForRange(
     status: r.status as DayStatus,
     qualifiedVisits: r.qualified_visits,
     totalMinutes: r.total_minutes,
+    isManual: r.is_manual === 1,
   }));
+}
+
+/**
+ * Sets a manual entry for a specific date
+ * Manual entries won't be overwritten by the daily rollup job
+ */
+export async function setManualEntry(
+  env: Env,
+  date: string,
+  status: DayStatus
+): Promise<void> {
+  const dayOfWeek = getDayOfWeek(date);
+  const workday = isWorkday(dayOfWeek);
+
+  await env.DB.prepare(`
+    INSERT INTO daily_rollups (roll_date, day_of_week, is_workday, status, qualified_visits, total_minutes, is_manual)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
+    ON CONFLICT(roll_date) DO UPDATE SET
+      status = excluded.status,
+      is_manual = 1
+  `).bind(date, dayOfWeek, workday ? 1 : 0, status, status === 'visit' ? 1 : 0, 0).run();
 }
 
 /**
@@ -179,7 +214,9 @@ export async function ensureRollupsExist(
 
   while (current <= end) {
     const dateStr = current.toISOString().split('T')[0];
-    if (!existingDates.has(dateStr)) {
+    // Always recompute today's rollup (may have new visit data)
+    // Only skip past dates that already have rollups
+    if (!existingDates.has(dateStr) || dateStr === today) {
       await computeRollupForDate(env, dateStr, today);
     }
     current.setDate(current.getDate() + 1);

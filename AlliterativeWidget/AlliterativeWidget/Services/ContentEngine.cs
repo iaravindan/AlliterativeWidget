@@ -26,8 +26,11 @@ public class ContentEngine : IContentEngine
             // So regenerate with same seed for consistency
         }
 
+        var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
         var headline = GenerateHeadline(date, config, history);
-        var punchline = SelectPunchline(config, history);
+        var punchline = isWeekend
+            ? SelectWeekendPunchline(config)
+            : SelectPunchline(config, history);
 
         // Update history
         history.LastDailyKey = dailyKey;
@@ -62,6 +65,16 @@ public class ContentEngine : IContentEngine
         history.HeadlineHistory.AddToDay(dayOfWeek, selectedPrefix, config.Rules.HeadlineNoRepeatWindow);
 
         return $"{selectedPrefix} {dayName}";
+    }
+
+    private string SelectWeekendPunchline(WidgetConfig config)
+    {
+        var punchlines = config.Content.WeekendPunchlines;
+        if (punchlines.Count == 0)
+        {
+            return "No synergy required today.";
+        }
+        return punchlines[_random.Next(punchlines.Count)];
     }
 
     private string SelectPunchline(WidgetConfig config, WidgetHistory history)

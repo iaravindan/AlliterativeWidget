@@ -1,12 +1,18 @@
 import { handleIngest } from './routes/ingest';
 import { handleSummary } from './routes/summary';
+import { handleManualEntry } from './routes/manual';
+import { handleStravaCallback } from './routes/strava-callback';
 import { runDailyRollup } from './scheduled/daily-rollup';
+import { syncCyclingWeekly } from './services/strava';
+import { validateAuth, unauthorizedResponse } from './services/auth';
 
 export interface Env {
   DB: D1Database;
   WRITE_TOKEN: string;
   READ_TOKEN: string;
   TIMEZONE: string;
+  STRAVA_CLIENT_ID: string;
+  STRAVA_CLIENT_SECRET: string;
 }
 
 export default {
@@ -36,6 +42,31 @@ export default {
       if (path === '/gym/summary' && request.method === 'GET') {
         const response = await handleSummary(request, env, url.searchParams);
         return addCorsHeaders(response, corsHeaders);
+      }
+
+      if (path === '/gym/manual' && request.method === 'POST') {
+        const response = await handleManualEntry(request, env);
+        return addCorsHeaders(response, corsHeaders);
+      }
+
+      if (path === '/strava/callback' && request.method === 'GET') {
+        const response = await handleStravaCallback(request, env, url.searchParams);
+        return addCorsHeaders(response, corsHeaders);
+      }
+
+      if (path === '/strava/sync' && request.method === 'POST') {
+        if (!validateAuth(request, env, 'write')) {
+          return addCorsHeaders(unauthorizedResponse(), corsHeaders);
+        }
+        const body = await request.json().catch(() => ({})) as { weeksBack?: number };
+        const weeksBack = body.weeksBack || 4;
+        const count = await syncCyclingWeekly(env, weeksBack);
+        return addCorsHeaders(
+          new Response(JSON.stringify({ ok: true, weeksSynced: count }), {
+            headers: { 'Content-Type': 'application/json' },
+          }),
+          corsHeaders
+        );
       }
 
       // Health check endpoint

@@ -78,6 +78,9 @@ public class ContentConfig
 
     [JsonPropertyName("punchlines")]
     public List<string> Punchlines { get; set; } = [];
+
+    [JsonPropertyName("weekend_punchlines")]
+    public List<string> WeekendPunchlines { get; set; } = [];
 }
 
 public class PrefixesConfig
@@ -97,6 +100,12 @@ public class PrefixesConfig
     [JsonPropertyName("F_prefixes")]
     public List<string> Friday { get; set; } = [];
 
+    [JsonPropertyName("S_prefixes_sat")]
+    public List<string> Saturday { get; set; } = [];
+
+    [JsonPropertyName("S_prefixes_sun")]
+    public List<string> Sunday { get; set; } = [];
+
     public List<string> GetPrefixesForDay(DayOfWeek day) => day switch
     {
         DayOfWeek.Monday => Monday,
@@ -104,6 +113,8 @@ public class PrefixesConfig
         DayOfWeek.Wednesday => Wednesday,
         DayOfWeek.Thursday => Thursday,
         DayOfWeek.Friday => Friday,
+        DayOfWeek.Saturday => Saturday,
+        DayOfWeek.Sunday => Sunday,
         _ => []
     };
 
@@ -114,6 +125,8 @@ public class PrefixesConfig
         DayOfWeek.Wednesday => "Wednesday",
         DayOfWeek.Thursday => "Thursday",
         DayOfWeek.Friday => "Friday",
+        DayOfWeek.Saturday => "Saturday",
+        DayOfWeek.Sunday => "Sunday",
         _ => ""
     };
 }

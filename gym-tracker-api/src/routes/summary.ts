@@ -1,6 +1,7 @@
 import type { Env } from '../index';
 import { validateAuth, unauthorizedResponse } from '../services/auth';
 import { getRollupsForRange, ensureRollupsExist } from '../services/rollup';
+import { getCyclingWeeksForRange } from '../services/strava';
 
 interface WeekData {
   weekStart: string;  // Monday date
@@ -10,13 +11,19 @@ interface WeekData {
 interface DayData {
   date: string;
   dayOfWeek: number;  // 1=Monday, 5=Friday for workdays
-  status: 'visit' | 'miss' | 'future' | 'excluded';
+  status: 'visit' | 'miss' | 'future' | 'excluded' | 'rest';
 }
 
 interface MonthLabel {
   month: string;      // "Jan", "Feb", etc.
   weekIndex: number;  // Starting column index
   weekSpan: number;   // Number of weeks this label covers
+}
+
+interface CyclingWeekEntry {
+  weekStart: string;
+  hasRide: boolean;
+  totalRides: number;
 }
 
 interface SummaryResponse {
@@ -36,6 +43,9 @@ interface SummaryResponse {
     totalMinutes: number;
     currentStreak: number;
     longestStreak: number;
+  };
+  cycling?: {
+    weeks: CyclingWeekEntry[];
   };
   generatedAt: string;
 }
@@ -120,6 +130,7 @@ async function getCurrentPeriodStats(
 
 /**
  * Builds the heatmap grid from rollup data
+ * Applies rest day logic: if weekly target is met, remaining workdays become 'rest'
  */
 function buildHeatmapGrid(
   rollups: Array<{
@@ -128,10 +139,12 @@ function buildHeatmapGrid(
     status: string;
   }>,
   weeks: number,
-  startDate: string
+  startDate: string,
+  weeklyTarget: number
 ): { grid: WeekData[]; monthLabels: MonthLabel[] } {
   const grid: WeekData[] = [];
   const monthLabels: MonthLabel[] = [];
+  const today = formatDate(new Date());
 
   // Create week buckets
   const start = new Date(startDate + 'T12:00:00Z');
@@ -179,6 +192,26 @@ function buildHeatmapGrid(
         dayOfWeek,
         status,
       });
+    }
+
+    // Apply rest day logic: if weekly target is met, convert 'miss' to 'rest'
+    // Only apply to weeks that are complete (Friday has passed)
+    const fridayDate = new Date(weekStart);
+    fridayDate.setDate(weekStart.getDate() + 4); // Friday is 4 days after Monday
+    const fridayDateStr = formatDate(fridayDate);
+
+    if (fridayDateStr <= today) {
+      // Count visits in this week
+      const visitCount = days.filter(d => d.status === 'visit').length;
+
+      // If target met, convert misses to rest days
+      if (visitCount >= weeklyTarget) {
+        for (const day of days) {
+          if (day.status === 'miss') {
+            day.status = 'rest';
+          }
+        }
+      }
     }
 
     grid.push({
@@ -279,7 +312,8 @@ export async function handleSummary(
   const rollups = await getRollupsForRange(env, startDate, today);
 
   // Build heatmap grid for the full range (including future weeks)
-  const { grid, monthLabels } = buildHeatmapGrid(rollups, weeks, startDate);
+  // Pass the weekly target for rest day logic
+  const { grid, monthLabels } = buildHeatmapGrid(rollups, weeks, startDate, target);
 
   // Get current period stats
   const currentPeriod = await getCurrentPeriodStats(env, mode, target);
@@ -290,6 +324,33 @@ export async function handleSummary(
   // Calculate total stats
   const totalVisits = rollups.filter(r => r.status === 'visit').length;
   const totalMinutes = rollups.reduce((sum, r) => sum + r.totalMinutes, 0);
+
+  // Fetch cycling data (optional — failures don't affect gym data)
+  let cycling: SummaryResponse['cycling'] | undefined;
+  try {
+    // Calculate the end date for cycling query (last week in the grid)
+    const lastWeekStart = grid.length > 0 ? grid[grid.length - 1].weekStart : startDate;
+    const cyclingRows = await getCyclingWeeksForRange(env, startDate, lastWeekStart);
+
+    if (cyclingRows.length > 0) {
+      // Build a lookup map for quick access
+      const cyclingMap = new Map(cyclingRows.map(r => [r.weekStart, r]));
+
+      // Align cycling data with heatmap grid columns
+      const cyclingWeeks: CyclingWeekEntry[] = grid.map(week => {
+        const match = cyclingMap.get(week.weekStart);
+        return {
+          weekStart: week.weekStart,
+          hasRide: match?.hasRide ?? false,
+          totalRides: match?.totalRides ?? 0,
+        };
+      });
+
+      cycling = { weeks: cyclingWeeks };
+    }
+  } catch (err) {
+    console.error('Failed to fetch cycling data (non-fatal):', err);
+  }
 
   const response: SummaryResponse = {
     currentPeriod,
@@ -304,6 +365,7 @@ export async function handleSummary(
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
     },
+    ...(cycling && { cycling }),
     generatedAt: new Date().toISOString(),
   };
 

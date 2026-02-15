@@ -6,7 +6,6 @@ namespace AlliterativeWidget.Services;
 public class SchedulerService : ISchedulerService
 {
     public event EventHandler? RefreshRequired;
-    public event EventHandler<bool>? VisibilityChanged;
 
     private readonly DispatcherQueue _dispatcherQueue;
     private DispatcherQueueTimer? _midnightTimer;
@@ -37,8 +36,6 @@ public class SchedulerService : ISchedulerService
         _midnightTimer?.Stop();
         _watchdogTimer?.Stop();
     }
-
-    public bool ShouldBeVisible() => DateTimeHelper.IsWorkday();
 
     public string GetCurrentDailyKey() => DateTimeHelper.GetTodayKey();
 
@@ -72,27 +69,9 @@ public class SchedulerService : ISchedulerService
 
     private void HandleDayChange()
     {
-        var wasWorkday = IsWorkday(_lastKnownDailyKey);
         _lastKnownDailyKey = GetCurrentDailyKey();
-        var isWorkday = ShouldBeVisible();
 
-        if (wasWorkday != isWorkday)
-        {
-            VisibilityChanged?.Invoke(this, isWorkday);
-        }
-
-        if (isWorkday)
-        {
-            RefreshRequired?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    private static bool IsWorkday(string dailyKey)
-    {
-        if (DateTime.TryParse(dailyKey, out var date))
-        {
-            return DateTimeHelper.IsWorkday(date);
-        }
-        return false;
+        // Always refresh content on day change (including weekends)
+        RefreshRequired?.Invoke(this, EventArgs.Empty);
     }
 }

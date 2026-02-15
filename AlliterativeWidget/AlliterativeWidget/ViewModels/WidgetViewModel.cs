@@ -26,16 +26,11 @@ public partial class WidgetViewModel : ObservableObject
         _scheduler = scheduler;
 
         _scheduler.RefreshRequired += OnRefreshRequired;
-        _scheduler.VisibilityChanged += OnVisibilityChanged;
     }
 
     public void Initialize()
     {
-        IsVisible = _scheduler.ShouldBeVisible();
-        if (IsVisible)
-        {
-            RefreshContent();
-        }
+        RefreshContent();
         _scheduler.Start();
     }
 
@@ -52,19 +47,9 @@ public partial class WidgetViewModel : ObservableObject
         RefreshContent();
     }
 
-    private void OnVisibilityChanged(object? sender, bool isVisible)
-    {
-        IsVisible = isVisible;
-        if (isVisible)
-        {
-            RefreshContent();
-        }
-    }
-
     public void Cleanup()
     {
         _scheduler.RefreshRequired -= OnRefreshRequired;
-        _scheduler.VisibilityChanged -= OnVisibilityChanged;
         _scheduler.Stop();
     }
 }

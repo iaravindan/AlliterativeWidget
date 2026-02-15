@@ -1,7 +1,9 @@
 using AlliterativeWidget.ViewModels;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 
 namespace AlliterativeWidget.Views;
 
@@ -50,7 +52,7 @@ public sealed partial class GymTileContent : UserControl
         UpdateProgressBar();
 
         // Update heatmap
-        HeatmapControl.ItemsSource = _viewModel.HeatmapRows;
+        UpdateHeatmap();
 
         // Update month labels
         UpdateMonthLabels();
@@ -85,27 +87,79 @@ public sealed partial class GymTileContent : UserControl
         ProgressFill.Width = Math.Max(0, progressWidth);
     }
 
+    private void UpdateHeatmap()
+    {
+        if (_viewModel == null) return;
+
+        HeatmapPanel.Children.Clear();
+
+        foreach (var row in _viewModel.HeatmapRows)
+        {
+            var rowPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+
+            foreach (var cell in row.Days)
+            {
+                rowPanel.Children.Add(new Border
+                {
+                    Width = 6,
+                    Height = 6,
+                    CornerRadius = new CornerRadius(1),
+                    Background = cell.Color
+                });
+            }
+
+            HeatmapPanel.Children.Add(rowPanel);
+        }
+
+        // Cycling row (6th row with visual gap)
+        if (_viewModel.CyclingRow != null && _viewModel.CyclingRow.Count > 0)
+        {
+            // 2px transparent spacer (combined with panel's 2px Spacing = 4px visual gap)
+            HeatmapPanel.Children.Add(new Border
+            {
+                Height = 2,
+                Background = new SolidColorBrush(Colors.Transparent)
+            });
+
+            var cyclingPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+            foreach (var cell in _viewModel.CyclingRow)
+            {
+                cyclingPanel.Children.Add(new Border
+                {
+                    Width = 6,
+                    Height = 6,
+                    CornerRadius = new CornerRadius(1),
+                    Background = cell.Color
+                });
+            }
+            HeatmapPanel.Children.Add(cyclingPanel);
+        }
+    }
+
     private void UpdateMonthLabels()
     {
         if (_viewModel == null) return;
+
+        MonthLabelsPanel.Children.Clear();
 
         const double cellWidth = 6;
         const double cellSpacing = 2;
         const double cellTotalWidth = cellWidth + cellSpacing;
 
-        var labels = new List<MonthLabelDisplay>();
         foreach (var label in _viewModel.MonthLabels)
         {
             var width = label.WeekSpan * cellTotalWidth;
 
-            labels.Add(new MonthLabelDisplay
+            MonthLabelsPanel.Children.Add(new TextBlock
             {
-                Month = label.Month,
+                FontFamily = new FontFamily("Cascadia Mono, Consolas, Courier New"),
+                FontSize = 9,
+                Foreground = new SolidColorBrush(ColorHelper.FromArgb(255, 96, 96, 96)),
+                Text = label.Month,
                 Width = width,
+                TextAlignment = TextAlignment.Left
             });
         }
-
-        MonthLabelsControl.ItemsSource = labels;
     }
 
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -126,10 +180,4 @@ public sealed partial class GymTileContent : UserControl
             _viewModel.DataRefreshed -= OnDataRefreshed;
         }
     }
-}
-
-internal class MonthLabelDisplay
-{
-    public string Month { get; set; } = "";
-    public double Width { get; set; }
 }
