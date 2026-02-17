@@ -95,6 +95,13 @@ public partial class App : Application
         _viewModel = new WidgetViewModel(contentEngine, schedulerService);
         _viewModel.ContentRefreshed += OnContentRefreshed;
 
+        // Subscribe to periodic refresh for gym data
+        if (_gymViewModel != null)
+        {
+            schedulerService.PeriodicRefresh += OnPeriodicRefresh;
+            schedulerService.RefreshRequired += OnDayChangeRefreshGym;
+        }
+
         // Activate window and initialize for all days (including weekends)
         _window.Activate();
         _viewModel.Initialize();
@@ -205,6 +212,22 @@ public partial class App : Application
     private async void OnGymRefreshRequested(object? sender, EventArgs e)
     {
         // Force refresh gym data when left-clicked on gym tile
+        if (_gymViewModel != null)
+        {
+            await _gymViewModel.ForceRefreshAsync();
+        }
+    }
+
+    private async void OnPeriodicRefresh(object? sender, EventArgs e)
+    {
+        if (_gymViewModel != null)
+        {
+            await _gymViewModel.RefreshDataAsync();
+        }
+    }
+
+    private async void OnDayChangeRefreshGym(object? sender, EventArgs e)
+    {
         if (_gymViewModel != null)
         {
             await _gymViewModel.ForceRefreshAsync();

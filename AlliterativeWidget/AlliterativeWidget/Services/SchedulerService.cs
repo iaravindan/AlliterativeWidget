@@ -6,6 +6,7 @@ namespace AlliterativeWidget.Services;
 public class SchedulerService : ISchedulerService
 {
     public event EventHandler? RefreshRequired;
+    public event EventHandler? PeriodicRefresh;
 
     private readonly DispatcherQueue _dispatcherQueue;
     private DispatcherQueueTimer? _midnightTimer;
@@ -65,6 +66,8 @@ public class SchedulerService : ISchedulerService
         {
             HandleDayChange();
         }
+
+        PeriodicRefresh?.Invoke(this, EventArgs.Empty);
     }
 
     private void HandleDayChange()
