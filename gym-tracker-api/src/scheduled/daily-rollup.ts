@@ -7,7 +7,7 @@ import { syncCyclingWeekly } from '../services/strava';
  * Runs the daily rollup job
  * - Auto-closes stale visits (open for > 240 minutes)
  * - Recomputes rollups for the past 7 days to catch any updates
- * - Syncs Strava cycling data for the past 2 weeks
+ * - Syncs Strava cycling data for the past 52 weeks
  */
 export async function runDailyRollup(env: Env): Promise<{
   closedVisits: number;
@@ -33,7 +33,7 @@ export async function runDailyRollup(env: Env): Promise<{
 
   // Step 3: Sync Strava cycling data (last 2 weeks)
   try {
-    const weeksSynced = await syncCyclingWeekly(env, 2);
+    const weeksSynced = await syncCyclingWeekly(env, 52);
     console.log(`Synced ${weeksSynced} cycling weeks from Strava`);
   } catch (err) {
     console.error('Strava cycling sync failed (non-fatal):', err);
