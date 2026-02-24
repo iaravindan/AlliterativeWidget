@@ -52,6 +52,8 @@ public partial class GymViewModel : ObservableObject
     [ObservableProperty]
     private List<HeatmapCellViewModel>? _cyclingRow;
 
+    public bool CanLogManualEntry => IsEnabled && !string.IsNullOrEmpty(_config.WriteToken);
+
     public event EventHandler? DataRefreshed;
 
     public GymViewModel(IGymService gymService, GymConfig config)
@@ -99,6 +101,23 @@ public partial class GymViewModel : ObservableObject
         finally
         {
             IsLoading = false;
+            DataRefreshed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public async Task LogManualEntryAsync(string date, string status)
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        var success = await _gymService.PostManualEntryAsync(date, status);
+        if (success)
+        {
+            await ForceRefreshAsync();
+        }
+        else
+        {
+            IsLoading = false;
+            ErrorMessage = _gymService.LastError ?? "Failed to log entry";
             DataRefreshed?.Invoke(this, EventArgs.Empty);
         }
     }

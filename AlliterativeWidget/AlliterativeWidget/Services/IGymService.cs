@@ -30,4 +30,8 @@ public interface IGymService
     /// Last error message if fetch failed
     /// </summary>
     string? LastError { get; }
+
+    /// <summary>Posts a manual gym entry (visit or miss) to the API.</summary>
+    /// <returns>True on success.</returns>
+    Task<bool> PostManualEntryAsync(string date, string status);
 }

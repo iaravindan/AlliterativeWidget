@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using AlliterativeWidget.Models;
 
@@ -148,6 +149,53 @@ public class GymService : IGymService, IDisposable
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    public async Task<bool> PostManualEntryAsync(string date, string status)
+    {
+        if (string.IsNullOrEmpty(_config.WriteToken) || string.IsNullOrEmpty(_config.ApiBaseUrl))
+        {
+            LastError = "Write token or API URL not configured";
+            return false;
+        }
+
+        try
+        {
+            var url = $"{_config.ApiBaseUrl.TrimEnd('/')}/gym/manual";
+            var body = JsonSerializer.Serialize(new
+            {
+                entries = new[] { new { date, status } }
+            });
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Add("X-Auth-Token", _config.WriteToken);
+            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+            using var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                LastError = $"API returned {(int)response.StatusCode}";
+                return false;
+            }
+
+            return true;
+        }
+        catch (TaskCanceledException)
+        {
+            LastError = "Request timed out";
+            return false;
+        }
+        catch (HttpRequestException ex)
+        {
+            LastError = $"Network error: {ex.Message}";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            LastError = $"Unexpected error: {ex.Message}";
+            return false;
         }
     }
 

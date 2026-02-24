@@ -1,7 +1,9 @@
 using AlliterativeWidget.ViewModels;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
@@ -99,13 +101,29 @@ public sealed partial class GymTileContent : UserControl
 
             foreach (var cell in row.Days)
             {
-                rowPanel.Children.Add(new Border
+                var border = new Border
                 {
                     Width = 6,
                     Height = 6,
                     CornerRadius = new CornerRadius(1),
                     Background = cell.Color
-                });
+                };
+
+                bool isClickable = _viewModel.CanLogManualEntry
+                    && !string.IsNullOrEmpty(cell.Date)
+                    && cell.Status != "excluded"
+                    && DateTime.TryParse(cell.Date, out var cellDate)
+                    && cellDate.Date <= DateTime.Today;
+
+                if (isClickable)
+                {
+                    var capturedCell = cell;
+                    border.PointerEntered += (s, e) => ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+                    border.PointerExited += (s, e) => ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+                    border.PointerPressed += (s, e) => OnCellPointerPressed(s, e, capturedCell);
+                }
+
+                rowPanel.Children.Add(border);
             }
 
             HeatmapPanel.Children.Add(rowPanel);
@@ -160,6 +178,38 @@ public sealed partial class GymTileContent : UserControl
                 TextAlignment = TextAlignment.Left
             });
         }
+    }
+
+    private void OnCellPointerPressed(object sender, PointerRoutedEventArgs e, HeatmapCellViewModel cell)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        e.Handled = true; // prevent tile-level refresh from firing
+
+        var border = (Border)sender;
+        var dateLabel = DateTime.TryParse(cell.Date, out var d) ? d.ToString("ddd, MMM d") : cell.Date;
+
+        var flyout = new MenuFlyout();
+
+        if (cell.Status == "visit")
+        {
+            var removeItem = new MenuFlyoutItem { Text = $"Remove {dateLabel} visit" };
+            removeItem.Click += async (s2, e2) => await SubmitManualEntry(cell.Date, "miss");
+            flyout.Items.Add(removeItem);
+        }
+        else
+        {
+            var markItem = new MenuFlyoutItem { Text = $"Mark {dateLabel} as visit" };
+            markItem.Click += async (s2, e2) => await SubmitManualEntry(cell.Date, "visit");
+            flyout.Items.Add(markItem);
+        }
+
+        flyout.ShowAt(border, new FlyoutShowOptions { Placement = FlyoutPlacementMode.Bottom });
+    }
+
+    private async Task SubmitManualEntry(string date, string status)
+    {
+        if (_viewModel == null) return;
+        await _viewModel.LogManualEntryAsync(date, status);
     }
 
     private void OnPointerPressed(object sender, PointerRoutedEventArgs e)

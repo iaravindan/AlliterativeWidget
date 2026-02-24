@@ -188,6 +188,7 @@
     "enabled": true,
     "api_base_url": "https://gym-tracker-api.aravindan-ingersol.workers.dev",
     "read_token": "5ylfJiDVWgVb4qcTPUlE3BkduXUczCqdvcb_T87eM6s",
+    "write_token": "efa96futsBuJZCORgPxXzCgssblmjrtE9QkOHnsz5G0",
     "target_period": "weekly",
     "target_visits": 4,
     "target_days": 50,

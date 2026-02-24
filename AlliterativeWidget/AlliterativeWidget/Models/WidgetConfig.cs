@@ -142,6 +142,9 @@ public class GymConfig
     [JsonPropertyName("read_token")]
     public string ReadToken { get; set; } = "";
 
+    [JsonPropertyName("write_token")]
+    public string WriteToken { get; set; } = "";
+
     [JsonPropertyName("target_period")]
     public string TargetPeriod { get; set; } = "weekly";
 

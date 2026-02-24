@@ -72,6 +72,14 @@ public class PersistenceService : IPersistenceService
         // Merge weekend punchlines if missing
         if (config.Content.WeekendPunchlines.Count == 0)
             config.Content.WeekendPunchlines = defaults.Content.WeekendPunchlines;
+
+        // Merge gym fields that may be absent from older saved configs
+        if (string.IsNullOrEmpty(config.Gym.ApiBaseUrl))
+            config.Gym.ApiBaseUrl = defaults.Gym.ApiBaseUrl;
+        if (string.IsNullOrEmpty(config.Gym.ReadToken))
+            config.Gym.ReadToken = defaults.Gym.ReadToken;
+        if (string.IsNullOrEmpty(config.Gym.WriteToken))
+            config.Gym.WriteToken = defaults.Gym.WriteToken;
     }
 
     private static bool IsValidConfig(WidgetConfig config)
