@@ -7,5 +7,6 @@ public interface ISchedulerService
 
     void Start();
     void Stop();
+    void TriggerDayChangeIfNeeded();
     string GetCurrentDailyKey();
 }

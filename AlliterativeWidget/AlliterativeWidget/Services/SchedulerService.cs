@@ -55,8 +55,22 @@ public class SchedulerService : ISchedulerService
 
     private void OnMidnightTick(DispatcherQueueTimer sender, object args)
     {
-        HandleDayChange();
+        // Only handle day change if watchdog hasn't already done it
+        var currentKey = GetCurrentDailyKey();
+        if (currentKey != _lastKnownDailyKey)
+        {
+            HandleDayChange();
+        }
         ScheduleMidnightTimer(); // Reschedule for next midnight
+    }
+
+    public void TriggerDayChangeIfNeeded()
+    {
+        var currentKey = GetCurrentDailyKey();
+        if (currentKey != _lastKnownDailyKey)
+        {
+            HandleDayChange();
+        }
     }
 
     private void OnWatchdogTick(DispatcherQueueTimer sender, object args)

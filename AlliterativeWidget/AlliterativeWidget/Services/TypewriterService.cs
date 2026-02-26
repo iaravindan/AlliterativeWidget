@@ -28,8 +28,9 @@ public class TypewriterService
         }
         catch (TaskCanceledException)
         {
-            // Animation was cancelled, set final text
-            target.Text = text;
+            // Animation was cancelled - do not set text here.
+            // The next animation call already cleared target.Text = "" before this
+            // catch block runs, so setting it here would corrupt the new animation.
         }
     }
 

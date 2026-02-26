@@ -27,6 +27,7 @@ public partial class App : Application
     private TaskbarIcon? _trayIcon;
     private bool _isWidgetVisible = true;
     private WidgetConfig? _config;
+    private ISchedulerService? _schedulerService;
 
     public App()
     {
@@ -90,6 +91,7 @@ public partial class App : Application
 
         // Create scheduler with dispatcher queue
         var schedulerService = new SchedulerService(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+        _schedulerService = schedulerService;
 
         // Create ViewModel
         _viewModel = new WidgetViewModel(contentEngine, schedulerService);
@@ -316,6 +318,11 @@ public partial class App : Application
     private void ShowWindow()
     {
         if (_window == null) return;
+
+        // If the day has changed since the last refresh (e.g. PC was asleep at midnight),
+        // trigger a content refresh before showing the window.
+        _schedulerService?.TriggerDayChangeIfNeeded();
+
         var hwnd = WindowNative.GetWindowHandle(_window);
         var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWindow = AppWindow.GetFromWindowId(windowId);
